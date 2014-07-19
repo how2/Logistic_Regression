@@ -99,41 +99,8 @@ public class LRegression {
             // Notice: ArrayListContainer extends from ValueListContainer
             ValueListContainer<Long, Double> dataPoints = new ArrayListContainer<Double>();
             ValueListStore<Long, Double> arrayList = null;
-            NumberStore<Integer, Double> vectorSum = null;
-            
-            // read data
-            job = new Job("ReadData");
-            
-            inputDomain = new Domain(job);
-            computeDomain = new Domain(job);
-            
-            inputDomain.setPartitionCount(1);
-
-            // Create the Resource Reader.
-            if (fileSystem == FileSystemType.HDFS) {
-                reader = new HdfsResourceReader<>(inputDomain, hdfsConfig, inputFiles.toArray(new String[0]));
-            }
-            else {
-                reader = new FileResourceReader<Long, String>(inputDomain, inputFiles.toArray(new String[0]));
-            }
-
-            // Transform, read data and parse
-        	final Transform<Long, String, Long, Double> parsePoints = new Transform<Long, String, Long, Double>(inputDomain) {
-        		@Override
-        		public void apply(Long key, String value, PartitionConnector context) throws IOException {
-        			String[] tok = RE.split(value);
-        			
-                    for (int i = 0; i < D + 1; i++) {	                      
-                      context.push(out(), key, Double.parseDouble(tok[i]));
-                    }
-        		}
-        	};
-        	
-            arrayList = new ValueListStore<Long, Double>(computeDomain, dataPoints);
-    		reader.out().bind(parsePoints.in());	        	
-    		parsePoints.out().bind(arrayList.add());
-        	hamr.runJob(job);
-        	
+            NumberStore<Integer, Double> vectorSum = null;          
+ 	
         	// Iteration
             for (iter = 1; iter <= iterationTimes; iter++) {
 
@@ -145,15 +112,15 @@ public class LRegression {
 	            broadcastDomain = new Domain(job);
 	        	
 	        	// Set Partition num
-//	        	job.setPartitionCount(outputPartitions);
-//	
-//	            // Create the Resource Reader.
-//	            if (fileSystem == FileSystemType.HDFS) {
-//	                reader = new HdfsResourceReader<>(inputDomain, hdfsConfig, inputFiles.toArray(new String[0]));
-//	            }
-//	            else {
-//	                reader = new FileResourceReader<Long, String>(inputDomain, inputFiles.toArray(new String[0]));
-//	            }
+	        	job.setPartitionCount(outputPartitions);
+	
+	            // Create the Resource Reader.
+	            if (fileSystem == FileSystemType.HDFS) {
+	                reader = new HdfsResourceReader<>(inputDomain, hdfsConfig, inputFiles.toArray(new String[0]));
+	            }
+	            else {
+	                reader = new FileResourceReader<Long, String>(inputDomain, inputFiles.toArray(new String[0]));
+	            }
 	            
 	            //reader.setConcurrentTaskLimit(1);
 	            
@@ -168,17 +135,17 @@ public class LRegression {
 	        	// Init ArrayListStore, save m*n matrix	            
 	            arrayList = new ValueListStore<Long, Double>(computeDomain, dataPoints);
 	            
-//	            // Transform, read data and parse
-//	        	final Transform<Long, String, Long, Double> parsePoints = new Transform<Long, String, Long, Double>(inputDomain) {
-//	        		@Override
-//	        		public void apply(Long key, String value, PartitionConnector context) throws IOException {
-//	        			String[] tok = RE.split(value);
-//	        			
-//	                    for (int i = 0; i < D + 1; i++) {	                      
-//	                      context.push(out(), key, Double.parseDouble(tok[i]));
-//	                    }
-//	        		}
-//	        	};
+	            // Transform, read data and parse
+	        	final Transform<Long, String, Long, Double> parsePoints = new Transform<Long, String, Long, Double>(inputDomain) {
+	        		@Override
+	        		public void apply(Long key, String value, PartitionConnector context) throws IOException {
+	        			String[] tok = RE.split(value);
+	        			
+	                    for (int i = 0; i < D + 1; i++) {	                      
+	                      context.push(out(), key, Double.parseDouble(tok[i]));
+	                    }
+	        		}
+	        	};
 	            
 	        	// Compute the gradient
 	        	// notice: ValueListStore -> ValueList<Double>
@@ -229,10 +196,10 @@ public class LRegression {
 	        	
 	        	// read lines from file and parse data to arrayList
 	        	// only once
-//		        if (iter == 1) {
-//	        		reader.out().bind(parsePoints.in());	        	
-//	        		parsePoints.out().bind(arrayList.add());
-//	        	}
+		        if (iter == 1) {
+	        		reader.out().bind(parsePoints.in());	        	
+	        		parsePoints.out().bind(arrayList.add());
+	        	}
 	        	
 	        	// compute gradient and update weights
 	        	// every time
